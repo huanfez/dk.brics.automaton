@@ -599,4 +599,34 @@ final public class SpecialOperations {
 		map.put(' ', ws);
 		return a.subst(map);
 	}
+	
+	/**
+	 * Returns an automaton where all transitions of the given char are from the projected chars.
+	 * @param c[] char
+	 * @return new automaton
+	 */
+	public static Automaton project(Automaton a, char c[]) {
+		a = a.cloneExpandedIfRequired();
+		Set<StatePair> epsilons = new HashSet<StatePair>();
+		for (State p : a.getStates()) {
+			Set<Transition> st = p.transitions;
+			p.resetTransitions();
+			for (Transition t : st){ 
+				boolean existFlag = false;
+				for (char cm : c)
+					if (t.max >= cm && t.min <= cm)
+						existFlag = true;
+
+				if (existFlag)
+					p.transitions.add(t);
+				else
+					epsilons.add(new StatePair(p, t.to));
+			}
+		}
+		a.addEpsilons(epsilons);
+		a.deterministic = false;
+		a.removeDeadTransitions();
+		a.checkMinimizeAlways();
+		return a;
+	}
 }
