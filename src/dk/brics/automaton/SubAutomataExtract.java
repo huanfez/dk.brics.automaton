@@ -41,8 +41,6 @@ public class SubAutomataExtract {
 			boolean addNew = true;//Flag for new subautomaton
 			strEventSet = getStrEventSet(path);
 			
-			System.out.print(path + " " + strEventSet + " " + "-");
-			
 			for (ArrayList<String> element : commonEventsLangSet) { //check whether sublanguage set contains qualified paths
 				System.out.print(getStrEventSet(element.get(0)) + " " + getStrEventSet(element.get(0)).equals(strEventSet) + "--");
 				if (element.get(0).length() == path.length() && getStrEventSet(element.get(0)).equals(strEventSet)) {
@@ -53,8 +51,7 @@ public class SubAutomataExtract {
 			}
 			
 			if (addNew == true)
-				commonEventsLangSet.add(new ArrayList<>(Arrays.asList(path)));
-			System.out.print(commonEventsLangSet + "\n");		
+				commonEventsLangSet.add(new ArrayList<>(Arrays.asList(path)));		
 		}
 		
 		for (ArrayList<String> lang : commonEventsLangSet) {
@@ -65,144 +62,10 @@ public class SubAutomataExtract {
 		return commonEventsAutSet;
 	}
 	
-	public static void main(String args[]) 
-	{ 
-		// give a regular expression, output subautomata
-		RegExp regExpr = new RegExp("e(a(cb|b(c|d))|b(da|a(c|d)))");
-		System.out.print(commonEventsAut(regExpr.toAutomaton()));
-	}
-}
-
-///********Remove backwards transitions and self-loop *********** /
-//* 
-//* @param aut
-//* @return
-//*/
-//public static DirectedAcyclicGraph<String,String> ConvertDAG(Automaton automaton) 
-//{ 
-//	DirectedAcyclicGraph<String,String> dag = 
-//			new DirectedAcyclicGraph<String, String>(String.class);
-//	
-//	// Create a FIFO queue for BFS 
-//	LinkedList<State> queue = new LinkedList<State>(); 
-//	//Set<State> visitedSet = new HashSet<State>();
-//	State currentState;
-//	String currentVertex;
-//	
-//	// Mark the initial state to be visited and enqueue it 
-//	queue.add(automaton.getInitialState()); 
-//	dag.addVertex(automaton.getInitialState().toString());
-//
-//	// Breadth-first search
-//	while (queue.size() != 0) 
+//	public static void main(String args[]) 
 //	{ 
-//		// Dequeue a state from queue and print it 
-//		currentState = queue.poll();
-//		currentVertex = currentState.toString();
-//		System.out.print(currentState+" "); 
-//
-//		// Get all successive states of the dequeued state rootState 
-//		// If a successive state has not been visited, then mark it visited and enqueue it 
-//		for (Transition transition : currentState.getTransitions())
-//		{
-//			String event = "";
-//			for (char tran = transition.getMin(); tran <= transition.getMax(); tran++)
-//				event += tran;
-//			
-//			//if (visitedSet.contains(transition.getDest()))
-//			
-//			if (dag.getAncestors(currentVertex).contains(transition.getDest().toString()))
-//				continue;
-//
-//			dag.addVertex(transition.getDest().toString());//may be repeated vertex
-//			dag.addEdge(currentVertex, transition.getDest().toString(), event);
-//			
-//			if (queue.contains(transition.getDest()) == false)
-//				queue.add(transition.getDest());
-//		}
-//		
-//		//visitedSet.add(currentState);
-//	} 
-//	
-//	return dag;
-//}
-//
-//public static Automaton acyclicAutomaton(Automaton automaton) 
-//{ 
-//	DirectedAcyclicGraph<String,String> dag = 
-//			new DirectedAcyclicGraph<String, String>(String.class);
-//	
-//	// Create a FIFO queue for BFS 
-//	LinkedList<State> queue = new LinkedList<State>(); 
-//	Set<State> visitedSet = new HashSet<State>();
-//	State currentState;
-//	
-//	// Mark the initial state to be visited and enqueue it 
-//	queue.add(automaton.getInitialState()); 
-//
-//	// Breadth-first search
-//	while (queue.size() != 0) 
-//	{ 
-//		// Dequeue a state from queue and print it 
-//		currentState = queue.poll();
-//		System.out.print(currentState+" "); 
-//
-//		// Get all successive states of the dequeued state rootState 
-//		// If a successive state has not been visited, then mark it visited and enqueue it 
-//		for (Transition transition : currentState.getTransitions())
-//		{				
-//			if (visitedSet.contains(transition.getDest()))
-//				continue;
-//			
-//			if (queue.contains(transition.getDest()) == false)
-//				queue.add(transition.getDest());
-//		}
-//		
-//		visitedSet.add(currentState);
-//	} 
-//	
-//	return dag;
-//}
-//
-///********Return acyclic automaton *********** /
-//* 
-//* @param aut
-//* @return
-//*/
-//public static List<GraphPath<String, DefaultEdge>> nonSelfIntPaths(Automaton automaton) {
-//	Graph<String, DefaultEdge> directedGraph = 
-//			new DefaultDirectedGraph<String, DefaultEdge>(DefaultEdge.class);
-//	 List<GraphPath<String, DefaultEdge>> allPaths = 
-//			 new ArrayList<GraphPath<String, DefaultEdge>>();
-//	
-//	//s
-//	for (State state : automaton.getStates())
-//	{
-//		directedGraph.addVertex(state.toString());
-//		
-//		for (Transition transition : state.getTransitions())//if transition has multiple ones?
-//		{
-//			directedGraph.addVertex(transition.getDest().toString());
-//			directedGraph.addEdge(state.toString(), transition.getDest().toString());
-//		}
+//		// give a regular expression, output subautomata
+//		RegExp regExpr = new RegExp("e(a(cb|b(c|d))|b(da|a(c|d)))");
+//		System.out.print(commonEventsAut(regExpr.toAutomaton()));
 //	}
-//	
-//	//System.out.print(directedGraph);
-//	System.out.print(automaton);
-//	Automaton automatonClone = automaton.clone();
-//	SpecialOperations.reverse(automatonClone);
-//	
-//	automatonClone.getInitialState().equals(automaton.getAcceptStates());
-//	System.out.print(automatonClone.getInitialState());
-//	System.out.print(automaton.getAcceptStates());
-//	
-//	AllDirectedPaths<String, DefaultEdge> allDirectedPaths = 
-//			new AllDirectedPaths<String, DefaultEdge>(directedGraph);
-//	
-//	System.out.print(allDirectedPaths);
-//	
-//	allPaths = allDirectedPaths.getAllPaths(automaton.getInitialState().toString(),
-//			automaton.getAcceptStates().toString(), true, null);
-//	 
-//	return allPaths;
-//}
+}
