@@ -42,7 +42,6 @@ public class SubAutomataExtract {
 			strEventSet = getStrEventSet(path);
 			
 			for (ArrayList<String> element : commonEventsLangSet) { //check whether sublanguage set contains qualified paths
-				System.out.print(getStrEventSet(element.get(0)) + " " + getStrEventSet(element.get(0)).equals(strEventSet) + "--");
 				if (element.get(0).length() == path.length() && getStrEventSet(element.get(0)).equals(strEventSet)) {
 					element.add(path);
 					addNew = false;
