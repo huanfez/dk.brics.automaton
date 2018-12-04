@@ -1,30 +1,6 @@
 /*
  * dk.brics.automaton
  * 
- * Copyright (c) 2001-2017 Anders Moeller
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  
 package dk.brics.automaton;
@@ -206,6 +182,103 @@ public class decompAut{
 		///***print out automata******//////
 		if (subAutSet.size() > 1) {
 			System.out.println("The decomposed subautomata are:");
+			for (Automaton subAut : subAutSet)
+				System.out.println("subtask automaton: " + subAut);
+		}
+		
+		return subAutSet;
+		//System.out.println(gloAut.toDot());
+		/////////////////////***End Iterative Decomposition******//////////////////////
+
+	}
+	
+		/***Iterative Parallel Decomposition with considering cooperative(common) event*********************/
+	public static List<Automaton> paraDecompC(Automaton gloAut, Set<Character> coopEventSet){
+		///***Initial Regular Expression and Automaton******///
+		//RegExp regExpr = new RegExp("a(b|(cd)*)");
+		//RegExp regExpr = new RegExp("a(bd|db)|b(ad|da)|d(ab|ba)");
+		//RegExp regExpr = new RegExp("(bd)|(db)");
+		
+		//Automaton gloAut = regExpr.toAutomaton();
+		System.out.println("The automaton to be decomposed is:" + gloAut);
+		//System.out.println(getEventSet(gloAut));
+	  
+		///***get Automaton Event Set******///
+		Set<Character> gEventSet = new HashSet<Character>();
+		gEventSet.addAll(getEventSet(gloAut));
+		char[] coopEventArray = new char[coopEventSet.size()];
+		int num = 0;
+		for (Character coopEvent : coopEventSet)
+			coopEventArray[num++] = coopEvent;
+	  
+		/////////////////////***Begin Iterative Decomposition******//////////////////////
+		Set<Character> IterGEventSet = new HashSet<Character>();
+		IterGEventSet.addAll(gEventSet);	
+		IterGEventSet.removeAll(coopEventSet);		
+		Automaton IterGloAut = gloAut.clone();
+		boolean DECOMFLAG = false;
+		List<Automaton> subAutSet = new ArrayList<Automaton>();
+		
+		while (IterGEventSet.size() > 1) {	
+			///***get the PowerSet of Automaton Event Set******///
+			Set<Set<Character>> gEventSetPowerSet = powerSet(IterGEventSet);
+			gEventSetPowerSet.remove(IterGEventSet);
+			gEventSetPowerSet.remove(Collections.emptySet());
+			//System.out.println(gEventSetPowerSet);
+			
+			///***PowerSet to Sorted ArrayList******///
+			List<Set<Character>> gEventPowerArrayList = powerSetToArrayList(gEventSetPowerSet);
+		  
+			///***Sorted PowerSet(ArrayList) to Binary Event Pairs******///
+			List<List<Set<Character>>> gEventPairArrayList = getEventSetPair(gEventPowerArrayList, 
+					IterGEventSet);
+			
+			///***(One Step Iteration)Automaton Decomposition with Binary Event Pairs******///
+			for (List<Set<Character>> gEventPair : gEventPairArrayList) {
+				gEventPair.get(0).addAll(coopEventSet);
+				gEventPair.get(1).addAll(coopEventSet);
+				
+				char eventPair1Array[] = new char[(gEventPair.get(0)).size()];
+				char eventPair2Array[] = new char[(gEventPair.get(1)).size()];
+				
+				///***Event Set Pairs to Array******///
+				int i = 0;
+				for(Character gEvent : gEventPair.get(0))
+					eventPair1Array[i++] = gEvent;
+				i = 0;
+				for(Character gEvent : gEventPair.get(1))
+					eventPair2Array[i++] = gEvent;
+		  
+				///***Project******///
+				Automaton proj1 = SpecialOperations.project(IterGloAut, eventPair1Array);
+				Automaton proj1_ = SpecialOperations.project(IterGloAut, eventPair2Array);
+		  
+				///***Parallel composition******///
+				Automaton invProj = ShuffleOperations.shuffleCoop(proj1, proj1_, coopEventSet);
+				
+				///***Equivalence Verification******///
+				//System.out.println(invProj);
+			
+				if (IterGloAut.equals(invProj)) {
+					DECOMFLAG = true;
+					
+					subAutSet.add(proj1);
+					IterGEventSet.removeAll(gEventPair.get(0));
+					IterGloAut = proj1_;
+				
+					//System.out.println(proj1_);
+					break;
+				}
+			}
+			
+			if (!DECOMFLAG)
+				break;
+		}
+		
+		subAutSet.add(IterGloAut);
+		///***print out automata******//////
+		if (subAutSet.size() > 1) {
+			System.out.println("The decomposition automata are:");
 			for (Automaton subAut : subAutSet)
 				System.out.println("subtask automaton: " + subAut);
 		}
