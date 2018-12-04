@@ -38,6 +38,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 /**
  * Automata operations involving shuffling.
  */
@@ -103,6 +105,88 @@ final public class ShuffleOperations {
 		return c;
 	}
 	
+	/** 
+	 * Returns an automaton that accepts the parallel composition (Consider the cooperative transition) of 
+	 * the languages of the given automata.
+	 * As a side-effect, both automata are determinized, if not already deterministic.     
+	 * Never modifies the input automata languages.
+	 * <p>
+	 * Complexity: quadratic in number of states (if already deterministic). 
+	 * <p>
+	 */
+	public static Automaton shuffleCoop(Automaton a1, Automaton a2, Set<Character> CoopEventSet) {
+		a1.determinize();
+		a2.determinize();
+		Transition[][] transitions1 = Automaton.getSortedTransitions(a1.getStates());
+		Transition[][] transitions2 = Automaton.getSortedTransitions(a2.getStates());
+		Automaton c = new Automaton();
+		LinkedList<StatePair> worklist = new LinkedList<StatePair>();
+		HashMap<StatePair, StatePair> newstates = new HashMap<StatePair, StatePair>();
+		State s = new State();
+		c.initial = s;
+		StatePair p = new StatePair(s, a1.initial, a2.initial);
+		worklist.add(p);
+		newstates.put(p, p);
+		while (worklist.size() > 0) {
+			p = worklist.removeFirst();
+			p.s.accept = p.s1.accept && p.s2.accept;
+			Transition[] t1 = transitions1[p.s1.number];
+			Transition[] t2 = transitions2[p.s2.number];
+			Set<Transition> CoopTransIn1 = new HashSet<Transition>();
+			Set<Transition> CoopTransIn2 = new HashSet<Transition>();
+			
+			for (int n1 = 0; n1 < t1.length; n1++) {
+				StatePair q = new StatePair(t1[n1].to, p.s2);
+				StatePair r = newstates.get(q);
+				if (r == null) {
+					q.s = new State();
+					worklist.add(q);
+					newstates.put(q, q);
+					r = q;
+				}
+				if (!CoopEventSet.contains(t1[n1].getMin()))
+					p.s.transitions.add(new Transition(t1[n1].min, t1[n1].max, r.s));
+				else
+					CoopTransIn1.add(t1[n1]);
+			}
+
+			for (int n2 = 0; n2 < t2.length; n2++) {
+				StatePair q = new StatePair(p.s1, t2[n2].to);
+				StatePair r = newstates.get(q);
+				if (r == null) {
+					q.s = new State();
+					worklist.add(q);
+					newstates.put(q, q);
+					r = q;
+				}
+				if (!CoopEventSet.contains(t2[n2].getMin()))
+					p.s.transitions.add(new Transition(t2[n2].min, t2[n2].max, r.s));
+				else
+					CoopTransIn2.add(t2[n2]);
+			}
+			
+			for (Transition trans1: CoopTransIn1)
+				for (Transition trans2: CoopTransIn2)
+					if (trans1.getMin() == trans2.getMin())
+					{
+						StatePair q = new StatePair(trans1.to, trans2.to);
+						StatePair r = newstates.get(q);
+						if (r == null) {
+							q.s = new State();
+							worklist.add(q);
+							newstates.put(q, q);
+							r = q;
+						}
+						p.s.transitions.add(new Transition(trans1.min, trans1.max, r.s));
+						break;
+					}
+		}
+		c.deterministic = false;
+		c.removeDeadTransitions();
+		c.checkMinimizeAlways();
+		return c;
+	}
+	
 	/**
 	 * Returns a string that is an interleaving of strings that are accepted by
 	 * <code>ca</code> but not by <code>a</code>. If no such string
@@ -114,7 +198,8 @@ final public class ShuffleOperations {
 	 * Complexity: proportional to the product of the numbers of states (if <code>a</code>
 	 * is already deterministic).
 	 */ 
-	public static String shuffleSubsetOf(Collection<Automaton> ca, Automaton a, Character suspend_shuffle, Character resume_shuffle) {
+	public static String shuffleSubsetOf(Collection<Automaton> ca, Automaton a, Character suspend_shuffle, 
+			Character resume_shuffle) {
 		if (ca.size() == 0)
 			return null;
 		if (ca.size() == 1) {
